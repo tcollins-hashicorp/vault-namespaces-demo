@@ -1,0 +1,47 @@
+# =============================================================================
+# Vault Enterprise Namespaces Demo
+# docker-compose.yml
+#
+# Services:
+#   vault  – HashiCorp Vault Enterprise, server mode with Raft storage
+#
+# Usage:
+#   podman compose up -d --build        # docker compose works the same way
+#   podman compose logs -f vault        # watch init / unseal / provisioning
+#   ./demo.sh all                       # guided walkthrough
+# =============================================================================
+
+networks:
+  vault-demo-net:
+    driver: bridge
+
+services:
+  # ── HashiCorp Vault Enterprise ───────────────────────────────────────────────
+  vault:
+    build:
+      context: ./vault
+      dockerfile: Dockerfile
+    container_name: vault-demo
+    ports:
+      - "8200:8200"
+      - "8201:8201"
+    environment:
+      VAULT_ADDR: "http://127.0.0.1:8200"
+      VAULT_LICENSE_PATH: "/vault/license/vault.lic"
+      VAULT_LOG_LEVEL: "info"
+      VAULT_LOG_FORMAT: "json"
+      SKIP_SETCAP: "true"
+    volumes:
+      - ~/Development/vault/demos/vault-NFR2.0.hclic:/vault/license/vault.lic:ro,z
+      - ./vault/data:/vault/data:z
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - vault-demo-net
+    healthcheck:
+      # Healthy only when unsealed and active (HTTP 200)
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8200/v1/sys/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 90s   # first run: init + unseal + provisioning takes ~30s

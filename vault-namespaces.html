@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Namespaces in Vault Enterprise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#000000; --white:#ffffff; --ink:#0a0a0a;
+    --gray-900:#171717; --gray-800:#242424; --gray-700:#3b3b3b;
+    --gray-500:#7a7a7a; --gray-300:#c2c2c2; --gray-100:#ededed; --gray-50:#f7f7f5;
+    --tf-purple:#7b42bc; --tf-purple-bright:#a067e8; --vault-yellow:#ffcf25;
+    --consul-pink:#dc477d; --nomad-green:#60dea9; --solar-yellow:#f5c518; --solar-red:#e3492f;
+    --grad-ilm:linear-gradient(120deg,#7b42bc 0%,#5c4ee5 50%,#2e71e5 100%);
+    --grad-slm:linear-gradient(120deg,#dc477d 0%,#9a4ec2 60%,#5c4ee5 100%);
+    --font-display:"Inter",system-ui,sans-serif; --font-mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{font-family:var(--font-display);background:var(--white);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5;}
+
+  .slide{min-height:100vh;padding:clamp(2rem,6vw,7rem) clamp(1.5rem,7vw,9rem);display:flex;flex-direction:column;justify-content:center;position:relative;border-bottom:1px solid var(--gray-100);overflow:hidden;}
+  .slide.dark{background:var(--black);color:var(--white);border-bottom:1px solid var(--gray-800);}
+  .slide.paper{background:var(--gray-50);}
+
+  .eyebrow{font-family:var(--font-mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gray-500);display:flex;align-items:center;gap:.8rem;margin-bottom:1.6rem;}
+  .dark .eyebrow{color:var(--gray-300);}
+  .eyebrow::before{content:"";width:2.2rem;height:2px;background:var(--vault-yellow);display:inline-block;}
+
+  h1,h2,h3{font-weight:600;letter-spacing:-.02em;line-height:1.04;}
+  h1{font-size:clamp(2.6rem,7vw,6rem);font-weight:700;}
+  h2{font-size:clamp(2rem,4.6vw,3.6rem);}
+  h3{font-size:clamp(1.25rem,2.4vw,1.7rem);font-weight:600;letter-spacing:-.01em;}
+  .lede{font-size:clamp(1.1rem,1.9vw,1.5rem);font-weight:300;color:var(--gray-700);max-width:46ch;margin-top:1.6rem;}
+  .dark .lede{color:var(--gray-300);}
+  p{font-weight:400;}
+  .grad-text{background:var(--grad-ilm);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+  .yellow{color:var(--vault-yellow);}
+
+  .row{display:grid;gap:clamp(2rem,4vw,4.5rem);align-items:center;}
+  .row.split{grid-template-columns:1.05fr .95fr;}
+  .row.top{align-items:start;}
+  @media(max-width:880px){.row.split{grid-template-columns:1fr;}}
+  .stack>*+*{margin-top:1.2rem;}
+
+  ul.clean{list-style:none;}
+  ul.clean li{padding-left:1.6rem;position:relative;margin-top:1rem;color:var(--gray-700);font-weight:400;font-size:clamp(1rem,1.4vw,1.12rem);}
+  .dark ul.clean li{color:var(--gray-300);}
+  ul.clean li::before{content:"";position:absolute;left:0;top:.62em;width:.55rem;height:.55rem;border-radius:50%;background:var(--tf-purple);}
+  .dark ul.clean li::before{background:var(--vault-yellow);}
+  ul.clean.no li::before{background:var(--gray-300);}
+  ul.clean li b{color:var(--ink);font-weight:600;} .dark ul.clean li b{color:var(--white);}
+
+  pre{font-family:var(--font-mono);font-size:clamp(.74rem,1vw,.9rem);background:var(--gray-900);color:var(--gray-100);border-radius:14px;padding:1.4rem 1.6rem;overflow-x:auto;line-height:1.7;border:1px solid var(--gray-800);}
+  pre .c{color:var(--gray-500);} pre .k{color:var(--tf-purple-bright);} pre .s{color:var(--nomad-green);} pre .n{color:var(--vault-yellow);} pre .d{color:var(--solar-red);}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.2rem;margin-top:2.4rem;}
+  .card{border:1px solid var(--gray-100);border-radius:16px;padding:1.6rem;background:var(--white);position:relative;overflow:hidden;}
+  .dark .card{background:var(--gray-900);border-color:var(--gray-800);}
+  .card .num{font-size:clamp(2rem,3.4vw,2.8rem);font-weight:700;letter-spacing:-.03em;line-height:1;}
+  .card .cap{font-family:var(--font-mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gray-500);margin-top:.7rem;}
+  .card .desc{font-size:.95rem;color:var(--gray-700);margin-top:.8rem;} .dark .card .desc{color:var(--gray-300);}
+  .card .h{font-weight:600;font-size:1.1rem;margin-top:.4rem;}
+
+  .fix{border-left:3px solid var(--tf-purple);padding:1rem 0 1rem 1.4rem;margin-top:1.6rem;}
+  .dark .fix{border-left-color:var(--vault-yellow);}
+  .fix.v{border-left-color:var(--vault-yellow);}
+  .fix .h{font-weight:600;font-size:1.12rem;display:flex;align-items:center;gap:.7rem;}
+  .fix .tag{font-family:var(--font-mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:.2rem .5rem;border-radius:5px;background:var(--gray-100);color:var(--gray-700);}
+  .dark .fix .tag{background:var(--gray-800);color:var(--gray-300);}
+  .fix p{color:var(--gray-700);margin-top:.5rem;font-size:1rem;} .dark .fix p{color:var(--gray-300);}
+
+  .kbd{font-family:var(--font-mono);background:var(--gray-100);padding:.12em .45em;border-radius:5px;font-size:.85em;border:1px solid var(--gray-300);}
+  .dark .kbd{background:var(--gray-800);border-color:var(--gray-700);color:var(--white);}
+  .footnote{font-size:.85rem;color:var(--gray-500);margin-top:1.4rem;font-style:italic;}
+  .lockup{display:flex;align-items:center;gap:.7rem;font-family:var(--font-mono);font-size:.82rem;letter-spacing:.08em;}
+  .lockup .sq{width:18px;height:18px;border-radius:4px;background:var(--grad-ilm);}
+  .logo{display:block;height:clamp(2.6rem,6vw,4.4rem);width:auto;margin-bottom:2.4rem;}
+  .hcmark{width:1.6rem;height:1.6rem;fill:currentColor;}
+
+  a{color:inherit;text-decoration:none;border-bottom:1px solid var(--gray-300);}
+  a:hover{border-bottom-color:var(--tf-purple);}
+  .links{list-style:none;margin-top:1.6rem;columns:2;column-gap:3rem;}
+  .links li{margin-top:.7rem;font-size:.98rem;break-inside:avoid;color:var(--gray-700);}
+  .links li span{font-family:var(--font-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-500);display:block;}
+  @media(max-width:880px){.links{columns:1;}}
+
+  .tree{font-family:var(--font-mono);font-size:clamp(.8rem,1.1vw,1rem);line-height:1.8;}
+  .tree .ns{color:var(--vault-yellow);font-weight:600;}
+  .tree .m{color:var(--gray-500);}
+
+  /* ---- chrome ---- */
+  .pagenum{position:absolute;bottom:clamp(1.2rem,3vh,2.4rem);right:clamp(1.5rem,7vw,9rem);font-family:var(--font-mono);font-size:.74rem;color:var(--gray-500);}
+  .secttag{position:absolute;bottom:clamp(1.2rem,3vh,2.4rem);left:clamp(1.5rem,7vw,9rem);font-family:var(--font-mono);font-size:.74rem;color:var(--gray-500);letter-spacing:.12em;text-transform:uppercase;}
+  .progress{position:fixed;top:0;left:0;height:3px;background:var(--grad-ilm);width:0;z-index:100;transition:width .1s;}
+  .dots{position:fixed;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:11px;z-index:90;}
+  .dots a{width:9px;height:9px;border-radius:50%;background:var(--gray-300);transition:all .2s;display:block;border:0;}
+  .dots a:hover{transform:scale(1.3);} .dots a.active{background:var(--tf-purple);transform:scale(1.25);}
+  @media(max-width:880px){.dots{display:none;}}
+
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease;}
+  .reveal.in{opacity:1;transform:none;}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none;}html{scroll-behavior:auto;}}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<nav class="dots" id="dots"></nav>
+
+<div class="deck">
+
+  <!-- 01 TITLE -->
+  <section class="slide dark" id="title" data-name="Title">
+    <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="16.55 0 163.61 72" role="img" aria-label="HashiCorp Vault"><path d="m16.55 10.39 26.46 51.5 26.65-51.5zm22.34 20.44h-4.22v-4.21h4.22zm0-6.32h-4.22v-4.22h4.22zm6.32 12.65h-4.22v-4.22h4.22zm0-6.32h-4.22v-4.21h4.22zm0-6.32h-4.22V20.3h4.22zm6.29 6.32h-4.22v-4.21h4.22zm-4.22-6.32V20.3h4.22v4.22z" style="fill:#ffcf25;stroke-width:0"></path><path d="m94.16 50.99-8.2-28h5.4l6.5 23.4h1.4l6.6-23.4h5.1l-8.2 28zm23.5.3c-4.1 0-6.7-2.2-6.7-5.8 0-4.2 3-5.6 6.6-6.4l6.1-1.4v-.4c0-2.1-1.4-3.4-3.5-3.4s-3.5 1.2-3.9 3.1l-4.4-.5c.7-3.8 3.9-6.2 8.5-6.2 5 0 8.3 3.2 8.3 7.8v8.4c0 .5.1.7.5.7h1.1v3.9h-3c-1.9 0-2.8-.6-2.8-2.2q0-.75.3-1.8l-.4-.2c-1.5 3-3.7 4.4-6.7 4.4m-1.8-6.2c0 1.6 1.2 2.6 3 2.6 2.8 0 4.7-2 4.7-5.2v-1.6l-4.5 1.1c-2.2.6-3.2 1.3-3.2 3.1m30.9-3.3v-11.2h5v20.4h-4.9v-.8c0-1 .1-1.8.3-3.2l-.4-.2c-1.2 3-3.2 4.7-6.6 4.7-4.4 0-6.8-2.8-6.8-7.5v-13.4h5v12.8c0 2.7 1.2 4 3.7 4 2.7.1 4.7-2 4.7-5.6m15.7-19.6v23.9c0 .8.3 1 .8 1h2.4v3.9h-4.7c-2.4 0-3.6-1.3-3.6-3.7v-21.1h-3v-4zm13.3 28.8c-3.9 0-5.6-1.6-5.6-5.1v-11.3h-3.6v-4h3.6v-5.2h5v5.2h5v4h-5v10.6c0 1.3.5 1.8 1.5 1.8h3.5v4z" style="stroke-width:0;fill:#fff"></path></svg>
+    <div class="eyebrow">Vault Enterprise</div>
+    <h1>Namespaces: one cluster, <span class="yellow">many tenants</span></h1>
+    <p class="lede">What a namespace is, when it earns its keep, and how access crosses the lines you draw. With a live environment to prove each point.</p>
+    <div class="secttag">00 — Intro</div>
+    <div class="pagenum">01</div>
+  </section>
+
+  <!-- 02 WHAT -->
+  <section class="slide" data-name="What a namespace is">
+    <div class="eyebrow reveal">Concept</div>
+    <h2 class="reveal" style="max-width:22ch;">A namespace is a <span class="grad-text">small Vault</span> inside your Vault</h2>
+    <div class="row split top" style="margin-top:2.4rem;">
+      <div class="stack">
+        <p class="lede reveal" style="margin-top:0;">Each one carries its own auth methods, secrets engines, ACL and Sentinel policies, entities, groups and tokens. HashiCorp calls the result secure multi-tenancy.</p>
+        <p class="reveal" style="color:var(--gray-700);max-width:46ch;">The parent of every namespace is <span class="kbd">root</span>, which is the Vault you get without the feature. Children nest as deep as you like, though three levels is the practical ceiling before the tree stops being readable.</p>
+      </div>
+      <pre class="reveal"><span class="c"># the tree this deck demos</span>
+root
+├── platform/
+│   ├── team-a/
+│   └── team-b/
+└── finance/</pre>
+    </div>
+    <div class="secttag">01 — Concept</div>
+    <div class="pagenum">02</div>
+  </section>
+
+  <!-- 03 THREE RULES -->
+  <section class="slide paper" data-name="Three rules">
+    <div class="eyebrow reveal">Concept</div>
+    <h2 class="reveal" style="max-width:20ch;">Three rules explain <span class="grad-text">everything</span> that follows</h2>
+    <div class="fix reveal">
+      <div class="h"><span class="tag">1</span> Paths are relative</div>
+      <p><span class="kbd">secret/foo</span> with namespace <span class="kbd">platform/team-a</span> and <span class="kbd">team-a/secret/foo</span> with namespace <span class="kbd">platform</span> reach the same key. Policies follow the same rule, so a policy in a parent can name a child by prefix.</p>
+    </div>
+    <div class="fix reveal">
+      <div class="h"><span class="tag">2</span> Tokens travel down, never up or sideways</div>
+      <p>A token issued in <span class="kbd">platform/</span> works in <span class="kbd">platform/team-a</span>. It does not work in <span class="kbd">finance/</span>, and Vault will not look it up there, so the denial comes before any policy check.</p>
+    </div>
+    <div class="fix reveal">
+      <div class="h"><span class="tag">3</span> Groups can hold entities from ancestors</div>
+      <p>A group in <span class="kbd">platform/team-a</span> may list an entity that lives in <span class="kbd">platform/</span>. When that entity's token makes a request in team-a, the group's policies apply to that request. <span class="kbd">vault token lookup</span> shows them as <span class="kbd">external_namespace_policies</span>.</p>
+    </div>
+    <div class="secttag">01 — Concept</div>
+    <div class="pagenum">03</div>
+  </section>
+
+  <!-- 04 WHEN -->
+  <section class="slide" data-name="When to use them">
+    <div class="eyebrow reveal">When</div>
+    <h2 class="reveal" style="max-width:20ch;">A namespace marks an <span class="grad-text">administrative</span> boundary</h2>
+    <p class="lede reveal">HashiCorp's own guidance is to use them sparingly. Create one when a tenant needs to run its own Vault, not when a team needs somewhere to put secrets.</p>
+    <div class="row split top" style="margin-top:2rem;">
+      <div>
+        <h3 class="reveal">Reach for a namespace when</h3>
+        <ul class="clean">
+          <li class="reveal"><b>A unit writes its own policies.</b> A business unit with its own security team, a subsidiary, an external customer on a shared cluster.</li>
+          <li class="reveal"><b>Separation has to be shown.</b> A regulated workload that auditors expect to see walled off, with its own audit trail per namespace.</li>
+          <li class="reveal"><b>Admin is delegated.</b> A platform team hands a tenant the keys to create children, mounts and policies without a root operator in the loop.</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="reveal">Use paths and mounts instead when</h3>
+        <ul class="clean no">
+          <li class="reveal"><b>It is one app or one team.</b> An ACL policy on <span class="kbd">secret/data/team-x/*</span> gives the isolation with none of the overhead.</li>
+          <li class="reveal"><b>Access is identity-shaped.</b> Templated policies on entity metadata scale to hundreds of teams; hundreds of namespaces do not.</li>
+          <li class="reveal"><b>Shared services dominate.</b> One Kubernetes auth mount or one LDAP mount in a parent beats a copy per child.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="secttag">02 — When</div>
+    <div class="pagenum">04</div>
+  </section>
+
+  <!-- 05 PROS -->
+  <section class="slide paper" data-name="What you gain">
+    <div class="eyebrow reveal">Trade-offs</div>
+    <h2 class="reveal" style="max-width:20ch;">What you <span class="grad-text">gain</span></h2>
+    <div class="cards">
+      <div class="card reveal"><div class="num">1</div><div class="cap">cluster</div><div class="desc">One set of unseal keys, one licence, one audit pipeline, one upgrade. Tenants share the hardware and nothing else.</div></div>
+      <div class="card reveal"><div class="num">0</div><div class="cap">shared identity</div><div class="desc">Unrelated namespaces share no auth, no entities and no policies. A mistake in finance cannot leak into platform.</div></div>
+      <div class="card reveal"><div class="num">↓</div><div class="cap">inheritance</div><div class="desc">Shared services live once in a parent. Policies and identities in a parent reach down into its children by design.</div></div>
+      <div class="card reveal"><div class="num">self</div><div class="cap">service</div><div class="desc">A delegated admin creates children, mounts and policies inside their own tree. The root operator is out of the loop.</div></div>
+    </div>
+    <p class="footnote reveal">Path-relative design means a tenant's scripts and policies do not care where in the tree they sit.</p>
+    <div class="secttag">03 — Trade-offs</div>
+    <div class="pagenum">05</div>
+  </section>
+
+  <!-- 06 CONS -->
+  <section class="slide dark" data-name="What it costs">
+    <div class="eyebrow reveal">Trade-offs</div>
+    <h2 class="reveal" style="max-width:20ch;">What it <span class="yellow">costs</span></h2>
+    <ul class="clean" style="max-width:62ch;margin-top:1.6rem;">
+      <li class="reveal"><b>Enterprise and HCP Vault Dedicated only.</b> Community edition does not have the feature.</li>
+      <li class="reveal"><b>Every namespace uses storage.</b> Each one starts with three mounts (auth, identity, system) and the whole namespace list must fit in a single storage entry. Mount tables cap at 1 MB on integrated storage.</li>
+      <li class="reveal"><b>Several <span class="kbd">sys/</span> paths stay root-only.</b> Seal, rekey, raw storage and audit configuration among them. An administrative namespace gets a subset back.</li>
+      <li class="reveal"><b>Nothing goes up or sideways.</b> Sharing between unrelated namespaces needs a cluster-wide switch or a copy of the secret.</li>
+      <li class="reveal"><b>Every client sets the namespace on every request.</b> Forget it and you get a 403 that looks like a policy problem. <span class="kbd">chroot_namespace</span> on a listener helps for single-tenant endpoints.</li>
+    </ul>
+    <div class="secttag">03 — Trade-offs</div>
+    <div class="pagenum">06</div>
+  </section>
+
+  <!-- 07 ENVIRONMENT -->
+  <section class="slide" data-name="The environment">
+    <div class="eyebrow reveal">Demo</div>
+    <h2 class="reveal" style="max-width:20ch;">The environment: one <span class="grad-text">shared</span> tree and one tenant apart</h2>
+    <pre class="reveal tree" style="margin-top:2rem;">root
+├── <span class="ns">platform/</span>      <span class="m">userpass · entities alice, bob, carol · policy platform-admin</span>
+│   ├── <span class="ns">team-a/</span>    <span class="m">kv-v2 · policy team-a-kv · group team-a-devs (alice)</span>
+│   └── <span class="ns">team-b/</span>    <span class="m">kv-v2 · policy team-b-kv · group team-b-devs (bob)</span>
+└── <span class="ns">finance/</span>       <span class="m">userpass · entity frank · kv-v2 · group finance-readers</span></pre>
+    <div class="row split top" style="margin-top:2rem;">
+      <div class="stack">
+        <p class="reveal" style="color:var(--gray-700);">Single-node Vault Enterprise on Podman, Raft storage, auto-init and auto-unseal. The tree is built once on first start by <span class="kbd">provision.d/20-namespaces.sh</span>.</p>
+        <p class="reveal" style="color:var(--gray-700);">The children have no auth mount of their own. <span class="kbd">finance/</span> has its own userpass and its own identity store and shares nothing with <span class="kbd">platform/</span>.</p>
+      </div>
+      <pre class="reveal"><span class="k">podman</span> compose up -d --build
+./demo.sh all          <span class="c"># four guided steps</span></pre>
+    </div>
+    <div class="secttag">04 — Demo</div>
+    <div class="pagenum">07</div>
+  </section>
+
+  <!-- 08 STEP 2 INHERITED AUTH -->
+  <section class="slide paper" data-name="Inherited auth">
+    <div class="eyebrow reveal">Demo · step 2</div>
+    <h2 class="reveal" style="max-width:22ch;">Log in once at the parent, <span class="grad-text">work</span> in the children</h2>
+    <div class="row split top" style="margin-top:2rem;">
+      <pre class="reveal"><span class="c"># alice authenticates where the mount is</span>
+vault write -namespace=<span class="s">platform</span> \
+  auth/userpass/login/alice password=...
+
+<span class="c"># same token, child namespace: allowed</span>
+VAULT_NAMESPACE=<span class="s">platform/team-a</span> \
+  vault kv get secret/app/config
+
+<span class="c"># what the token sees in team-a</span>
+vault token lookup
+  policies                      [default]
+  external_namespace_policies   {
+    <span class="s">platform/team-a/</span>: [team-a-kv] }
+
+<span class="c"># sibling namespace: denied</span>
+VAULT_NAMESPACE=<span class="s">platform/team-b</span> \
+  vault kv get secret/app/config
+  <span class="d">403 permission denied</span></pre>
+      <div class="stack">
+        <p class="reveal" style="color:var(--gray-700);">alice's token has only <span class="kbd">default</span> when it is issued. The <span class="kbd">team-a-devs</span> group in the child lists her entity from <span class="kbd">platform/</span>, so Vault adds <span class="kbd">team-a-kv</span> to every request she makes in team-a.</p>
+        <p class="reveal" style="color:var(--gray-700);">team-b's group does not list her. Same token, same login, different answer. Membership is evaluated on every request, so no re-login is needed when it changes.</p>
+      </div>
+    </div>
+    <div class="secttag">04 — Demo</div>
+    <div class="pagenum">08</div>
+  </section>
+
+  <!-- 09 TWO WAYS -->
+  <section class="slide" data-name="Two owners">
+    <div class="eyebrow reveal">Demo · step 2</div>
+    <h2 class="reveal" style="max-width:22ch;">Two ways to inherit, and they put the decision with <span class="grad-text">different owners</span></h2>
+    <div class="row split top" style="margin-top:2rem;">
+      <div class="fix v reveal">
+        <div class="h"><span class="tag">child decides</span> Group in the child namespace</div>
+        <p>team-a's admin writes <span class="kbd">team-a-kv</span> and a group that lists alice's entity. The platform team never sees the change. This is the pattern in HashiCorp's secure multi-tenancy tutorial.</p>
+        <pre style="margin-top:1rem;">vault write -namespace=<span class="s">platform/team-a</span> \
+  identity/group name=team-a-devs \
+  policies=team-a-kv \
+  member_entity_ids=<span class="n">$ALICE_ID</span></pre>
+      </div>
+      <div class="fix reveal">
+        <div class="h"><span class="tag">parent decides</span> Policy in the parent, child by prefix</div>
+        <p>carol's <span class="kbd">platform-admin</span> policy is written in <span class="kbd">platform/</span>. Vault reads its paths relative to that namespace, so <span class="kbd">team-a/*</span> means <span class="kbd">platform/team-a/*</span>. No group in either child.</p>
+        <pre style="margin-top:1rem;"><span class="c"># platform-admin, written in platform/</span>
+path <span class="s">"team-a/*"</span> { capabilities = [<span class="s">"read"</span>, ...] }
+path <span class="s">"team-b/*"</span> { capabilities = [<span class="s">"read"</span>, ...] }</pre>
+      </div>
+    </div>
+    <p class="footnote reveal">Neither approach needs an auth method mounted in the child.</p>
+    <div class="secttag">04 — Demo</div>
+    <div class="pagenum">09</div>
+  </section>
+
+  <!-- 10 SEGREGATION -->
+  <section class="slide dark" data-name="Segregation">
+    <div class="eyebrow reveal">Demo · step 3</div>
+    <h2 class="reveal" style="max-width:20ch;">finance/ shares <span class="yellow">nothing</span> with platform/</h2>
+    <div class="row split top" style="margin-top:2rem;">
+      <pre class="reveal"><span class="c"># alice (platform token) in finance</span>
+VAULT_NAMESPACE=<span class="s">finance</span> vault kv get secret/ledger/q4
+  <span class="d">403 permission denied</span>
+VAULT_NAMESPACE=<span class="s">finance</span> vault token lookup
+  <span class="d">403 permission denied</span>
+
+<span class="c"># frank (finance token) at home, then in platform</span>
+VAULT_NAMESPACE=<span class="s">finance</span> vault kv get secret/ledger/q4
+  revenue   4,200,000
+VAULT_NAMESPACE=<span class="s">platform/team-a</span> vault kv get secret/app/config
+  <span class="d">403 permission denied</span>
+
+<span class="c"># root namespace sees both</span>
+VAULT_NAMESPACE=<span class="s">finance</span> vault kv get secret/ledger/q4
+VAULT_NAMESPACE=<span class="s">platform/team-b</span> vault kv get secret/app/config</pre>
+      <ul class="clean">
+        <li class="reveal"><b>The denial comes before any policy check.</b> finance/ is outside alice's token sub-tree, so Vault refuses to look the token up at all.</li>
+        <li class="reveal"><b>Each tenant brings its own login.</b> frank authenticates against the userpass mount in finance/ and his entity lives there.</li>
+        <li class="reveal"><b>Root is above everyone.</b> Every namespace descends from root, so a root-namespace operator with the right policy reaches all of them. The isolation is between tenants rather than from the platform.</li>
+      </ul>
+    </div>
+    <div class="secttag">04 — Demo</div>
+    <div class="pagenum">10</div>
+  </section>
+
+  <!-- 11 CROSS NAMESPACE -->
+  <section class="slide" data-name="Cross-namespace">
+    <div class="eyebrow reveal">Demo · step 4</div>
+    <h2 class="reveal" style="max-width:22ch;">Three ways to cross a boundary, in rising order of <span class="grad-text">blast radius</span></h2>
+    <div class="cards">
+      <div class="card reveal">
+        <div class="num">1</div><div class="cap">path prefix</div>
+        <div class="h">Policy in a parent</div>
+        <div class="desc">carol, step 2. Scope is whichever child paths the parent policy names. Owner: the platform team.</div>
+      </div>
+      <div class="card reveal">
+        <div class="num">2</div><div class="cap">ancestor entity</div>
+        <div class="h">Group in the target, entity from above</div>
+        <div class="desc">alice joins <span class="kbd">team-b-devs</span> and reads team-b with no new login. Scope is one group in one namespace. Owner: team-b's admin.</div>
+      </div>
+      <div class="card reveal">
+        <div class="num">3</div><div class="cap">any namespace</div>
+        <div class="h">Group in an unrelated namespace</div>
+        <div class="desc">alice joins <span class="kbd">finance-readers</span>. Works only after a cluster-wide mode change. Owner: whoever owns the root namespace.</div>
+      </div>
+    </div>
+    <div class="secttag">04 — Demo</div>
+    <div class="pagenum">11</div>
+  </section>
+
+  <!-- 12 GLOBAL SWITCH -->
+  <section class="slide paper" data-name="The global switch">
+    <div class="eyebrow reveal">Demo · step 4</div>
+    <h2 class="reveal" style="max-width:22ch;">Option 3 is a <span class="grad-text">cluster-wide</span> switch, so decide it once</h2>
+    <div class="row split top" style="margin-top:2rem;">
+      <pre class="reveal"><span class="c"># default: groups only apply within a hierarchy</span>
+vault read sys/config/group-policy-application
+  group_policy_application_mode  within_namespace_hierarchy
+
+vault write sys/config/group-policy-application \
+  group_policy_application_mode=<span class="s">any</span>
+
+vault write -namespace=<span class="s">finance</span> \
+  identity/group/name/finance-readers \
+  member_entity_ids=<span class="n">$ALICE_ID</span>
+
+<span class="c"># alice, platform token, finance namespace</span>
+vault kv get secret/ledger/q4      <span class="c"># allowed</span>
+
+<span class="c"># put it back and the access goes with it</span>
+vault write sys/config/group-policy-application \
+  group_policy_application_mode=<span class="s">within_namespace_hierarchy</span>
+vault kv get secret/ledger/q4      <span class="d"># 403</span></pre>
+      <ul class="clean">
+        <li class="reveal"><b>Introduced in Vault Enterprise 1.13.</b> Before that, sibling access meant a copy of the secret or a second login.</li>
+        <li class="reveal"><b>It applies to every group in every namespace.</b> You cannot enable it for finance alone. Decide it as a platform standard and write the decision down.</li>
+        <li class="reveal"><b>ACL policies only.</b> Sentinel role governing policies are unaffected from 1.15.</li>
+        <li class="reveal"><b>It replicates.</b> Primary and secondary clusters cannot run different modes.</li>
+      </ul>
+    </div>
+    <div class="secttag">04 — Demo</div>
+    <div class="pagenum">12</div>
+  </section>
+
+  <!-- 13 TAKEAWAYS -->
+  <section class="slide" data-name="Takeaways">
+    <div class="eyebrow reveal">Summary</div>
+    <h2 class="reveal" style="max-width:20ch;">What to take <span class="grad-text">back</span> to your design</h2>
+    <ul class="clean" style="max-width:64ch;margin-top:1.6rem;">
+      <li class="reveal"><b>Namespaces are for tenants who administer themselves.</b> Everyone else gets a mount path and a templated policy.</li>
+      <li class="reveal"><b>Put shared auth in a parent and let the children pull identities down.</b> One login point, access decided where the secrets live.</li>
+      <li class="reveal"><b>Unrelated tenants get unrelated trees.</b> No shared ancestor below root means no accidental path across.</li>
+      <li class="reveal"><b>Pick the smallest crossing that works.</b> Path prefix, then ancestor entity in a group, then the global mode. Each step widens who can grant what.</li>
+      <li class="reveal"><b>Codify the tree.</b> Namespaces, policies and groups in Terraform, so the structure outlives the person who drew it.</li>
+    </ul>
+    <div class="secttag">05 — Summary</div>
+    <div class="pagenum">13</div>
+  </section>
+
+  <!-- 14 DOCS -->
+  <section class="slide paper" data-name="Official documentation">
+    <div class="eyebrow reveal">Reference</div>
+    <h2 class="reveal" style="max-width:20ch;">Official <span class="grad-text">documentation</span></h2>
+    <ul class="links reveal">
+      <li><span>Concept</span><a href="https://developer.hashicorp.com/vault/docs/enterprise/namespaces">Vault Enterprise namespaces</a></li>
+      <li><span>Guidance</span><a href="https://developer.hashicorp.com/vault/docs/enterprise/namespaces/namespace-structure">Best practices for namespaces and mount paths</a></li>
+      <li><span>Limits</span><a href="https://developer.hashicorp.com/vault/docs/enterprise/namespaces/namespace-limits">Running Vault with many namespaces</a></li>
+      <li><span>Limits</span><a href="https://developer.hashicorp.com/vault/docs/internals/limits#namespace-limits">Vault limits and maximums</a></li>
+      <li><span>Delegation</span><a href="https://developer.hashicorp.com/vault/docs/enterprise/namespaces/create-admin-namespace">Create an administrative namespace</a></li>
+      <li><span>Tutorial</span><a href="https://developer.hashicorp.com/vault/tutorials/enterprise/namespaces">Secure multi-tenancy with namespaces</a></li>
+      <li><span>Tutorial</span><a href="https://developer.hashicorp.com/vault/tutorials/enterprise/namespaces-secrets-sharing">Secrets across namespaces without a hierarchical relationship</a></li>
+      <li><span>API</span><a href="https://developer.hashicorp.com/vault/api-docs/system/config-group-policy-application">sys/config/group-policy-application</a></li>
+      <li><span>API</span><a href="https://developer.hashicorp.com/vault/api-docs/system/namespaces">sys/namespaces</a></li>
+      <li><span>CLI</span><a href="https://developer.hashicorp.com/vault/docs/commands/namespace">vault namespace</a></li>
+      <li><span>UI</span><a href="https://developer.hashicorp.com/vault/docs/ui/namespaces">Namespaces in the Vault UI</a></li>
+      <li><span>Background</span><a href="https://developer.hashicorp.com/vault/docs/concepts/identity">Identity: entities and groups</a></li>
+      <li><span>Background</span><a href="https://developer.hashicorp.com/vault/docs/concepts/policies">Policies</a></li>
+      <li><span>Blog</span><a href="https://www.hashicorp.com/blog/how-to-use-vault-namespaces">How to use Vault namespaces</a></li>
+    </ul>
+    <div class="secttag">06 — Reference</div>
+    <div class="pagenum">14</div>
+  </section>
+
+  <!-- 15 CLOSE -->
+  <section class="slide dark" data-name="Close">
+    <div class="eyebrow">Vault Enterprise</div>
+    <h1 style="max-width:16ch;">Draw the lines <span class="yellow">once</span>, then let identity do the work</h1>
+    <p class="lede">Questions, then the terminal: <span class="kbd">./demo.sh all</span></p>
+    <div class="lockup" style="margin-top:3rem;"><svg class="hcmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="HashiCorp"><path d="M372.1 43.9V329l-75.8 43.6v-82.4h-80.5V512l-75.5-43.9V183l75.5-43.6v83h80.5V0zm125.6 72.7v279.2L296.3 512v-87.4l126-72.7V72.7zm-282-29.2L90.1 160.1v279.2l-75.8-43.9V116.3L215.7 0z"/></svg> HashiCorp · Vault Enterprise</div>
+    <div class="secttag">07 — Close</div>
+    <div class="pagenum">15</div>
+  </section>
+
+</div>
+
+<script>
+  // reveal-on-scroll
+  const revObs=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');revObs.unobserve(e.target);}});},{threshold:.18});
+  document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transitionDelay=(i%6*0.06)+'s';revObs.observe(el);});
+
+  // nav dots
+  const slides=[...document.querySelectorAll('.slide')];
+  const dots=document.getElementById('dots');
+  slides.forEach((s,i)=>{if(!s.id)s.id='s'+i;const a=document.createElement('a');a.href='#'+s.id;a.title=s.dataset.name||('Slide '+(i+1));dots.appendChild(a);});
+  const dotEls=[...dots.children];
+
+  // progress
+  const prog=document.getElementById('progress');
+  function onScroll(){const h=document.documentElement;prog.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+
+  // active dot + current slide
+  let cur=0;
+  const actObs=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){const idx=slides.indexOf(e.target);cur=idx;dotEls.forEach((d,i)=>d.classList.toggle('active',i===idx));}});},{threshold:.5});
+  slides.forEach(s=>actObs.observe(s));
+
+  // keyboard paging
+  function go(n){cur=Math.max(0,Math.min(slides.length-1,n));slides[cur].scrollIntoView({behavior:'smooth'});}
+  window.addEventListener('keydown',(e)=>{
+    if(e.key==='ArrowDown'||e.key==='PageDown'||e.key===' '){e.preventDefault();go(cur+1);}
+    if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();go(cur-1);}
+  });
+</script>
+</body>
+</html>
